@@ -7,17 +7,208 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #000;
+      background: #0a0a0a;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 24px;
       height: 100vh;
       overflow: hidden;
+      font-family: monospace;
     }
+
+    #game-container canvas { display: block; }
+
+    /* Dev panel */
+    #dev-panel {
+      width: 200px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 12px;
+      color: #888;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    #dev-panel h3 {
+      color: #444;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1e1e1e;
+    }
+
+    .dev-section { display: flex; flex-direction: column; gap: 6px; }
+
+    .dev-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .dev-row label { color: #666; flex: 1; }
+
+    /* Toggle */
+    .toggle {
+      width: 28px;
+      height: 14px;
+      background: #222;
+      border-radius: 7px;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      border: 1px solid #333;
+      transition: background 0.2s;
+    }
+    .toggle.on { background: #2a5c2a; border-color: #3a7a3a; }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #444;
+      border-radius: 50%;
+      top: 1px;
+      left: 1px;
+      transition: left 0.2s, background 0.2s;
+    }
+    .toggle.on::after { left: 15px; background: #5aff5a; }
+
+    /* Slider */
+    .dev-slider { display: flex; flex-direction: column; gap: 4px; }
+    .dev-slider label { color: #666; display: flex; justify-content: space-between; }
+    .dev-slider label span { color: #aaa; }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: #222;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      background: #5aff5a;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* Stage jump buttons */
+    .stage-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .stage-btn {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #555;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 3px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .stage-btn:hover { border-color: #5aff5a; color: #5aff5a; }
+    .stage-btn.active { background: #1a3a1a; border-color: #5aff5a; color: #5aff5a; }
+
+    .dev-label {
+      color: #333;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    #restart-btn {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #666;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    #restart-btn:hover { border-color: #ff5555; color: #ff5555; }
   </style>
 </head>
 <body>
   <div id="game-container"></div>
+
+  <div id="dev-panel">
+    <h3>⚙ Dev Panel</h3>
+
+    <div class="dev-section">
+      <div class="dev-label">Jump to stage</div>
+      <div class="stage-buttons">
+        <button class="stage-btn active" data-stage="1">S1</button>
+        <button class="stage-btn" data-stage="2">S2</button>
+        <button class="stage-btn" data-stage="3">S3</button>
+        <button class="stage-btn" data-stage="4">S4</button>
+        <button class="stage-btn" data-stage="5">S5</button>
+        <button class="stage-btn" data-stage="6">S6</button>
+      </div>
+    </div>
+
+    <div class="dev-section">
+      <div class="dev-label">Milestones</div>
+      <div class="dev-row">
+        <label>Screen glitch</label>
+        <div class="toggle on" data-key="glitch"></div>
+      </div>
+      <div class="dev-row">
+        <label>Ghost trail</label>
+        <div class="toggle on" data-key="trail"></div>
+      </div>
+      <div class="dev-row">
+        <label>Food twitch</label>
+        <div class="toggle on" data-key="foodTwitch"></div>
+      </div>
+      <div class="dev-row">
+        <label>World tilt</label>
+        <div class="toggle on" data-key="tilt"></div>
+      </div>
+      <div class="dev-row">
+        <label>Snake pause</label>
+        <div class="toggle on" data-key="pause"></div>
+      </div>
+      <div class="dev-row">
+        <label>Near-death</label>
+        <div class="toggle on" data-key="nearDeath"></div>
+      </div>
+      <div class="dev-row">
+        <label>Jump powerup</label>
+        <div class="toggle on" data-key="jump"></div>
+      </div>
+    </div>
+
+    <div class="dev-section">
+      <div class="dev-slider">
+        <label>Speed <span id="speed-val">150ms</span></label>
+        <input type="range" id="speed-slider" min="50" max="300" value="150" step="10">
+      </div>
+      <div class="dev-slider">
+        <label>Snake size <span id="size-val">3</span></label>
+        <input type="range" id="size-slider" min="3" max="30" value="3" step="1">
+      </div>
+    </div>
+
+    <button id="restart-btn">↺ restart game</button>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script src="src/config/stages.js"></script>
   <script src="src/config/powerups.js"></script>
@@ -27,5 +218,64 @@
   <script src="src/scenes/BootScene.js"></script>
   <script src="src/scenes/GameScene.js"></script>
   <script src="src/main.js"></script>
+
+  <script>
+    // Dev panel state — read by GameScene
+    window.DEV = {
+      stage: 1,
+      milestones: {
+        glitch: true, trail: true, foodTwitch: true,
+        tilt: true, pause: true, nearDeath: true, jump: true,
+      },
+      speedOverride: null,  // ms per tick, null = use evolution default
+      startSize: 3,
+    };
+
+    // Stage buttons
+    document.querySelectorAll('.stage-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        window.DEV.stage = parseInt(btn.dataset.stage);
+        restartGame();
+      });
+    });
+
+    // Milestone toggles
+    document.querySelectorAll('.toggle').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const key = toggle.dataset.key;
+        window.DEV.milestones[key] = !window.DEV.milestones[key];
+        toggle.classList.toggle('on', window.DEV.milestones[key]);
+      });
+    });
+
+    // Speed slider
+    const speedSlider = document.getElementById('speed-slider');
+    const speedVal = document.getElementById('speed-val');
+    speedSlider.addEventListener('input', () => {
+      const v = parseInt(speedSlider.value);
+      speedVal.textContent = v + 'ms';
+      window.DEV.speedOverride = v;
+    });
+
+    // Size slider
+    const sizeSlider = document.getElementById('size-slider');
+    const sizeVal = document.getElementById('size-val');
+    sizeSlider.addEventListener('input', () => {
+      const v = parseInt(sizeSlider.value);
+      sizeVal.textContent = v;
+      window.DEV.startSize = v;
+    });
+
+    // Restart button
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+
+    function restartGame() {
+      if (window.game && window.game.scene) {
+        window.game.scene.getScene('GameScene').scene.restart();
+      }
+    }
+  </script>
 </body>
 </html>

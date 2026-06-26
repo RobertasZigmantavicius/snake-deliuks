@@ -23,6 +23,7 @@ class EvolutionSystem {
   }
 
   tickRate() {
+    if (window.DEV && window.DEV.speedOverride !== null) return window.DEV.speedOverride;
     const rates = { 1: 150, 2: 140, 3: 125, 4: 110, 5: 95, 6: 80 };
     return rates[this.stage] || 150;
   }

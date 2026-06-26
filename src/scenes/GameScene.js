@@ -12,11 +12,12 @@ class GameScene extends Phaser.Scene {
     this.playstyle = new PlaystyleTracker();
     this.voice = new VoiceReactor(this);
 
-    this.snake = [
-      { x: 15, y: 15 },
-      { x: 14, y: 15 },
-      { x: 13, y: 15 },
-    ];
+    // Build starting snake from DEV.startSize
+    const startSize = (window.DEV && window.DEV.startSize) || 3;
+    this.snake = [];
+    for (let i = 0; i < startSize; i++) {
+      this.snake.push({ x: 15 - i, y: 15 });
+    }
     this.dir = { x: 1, y: 0 };
     this.nextDir = { x: 1, y: 0 };
     this.food = this.spawnFood();
@@ -28,10 +29,15 @@ class GameScene extends Phaser.Scene {
     this.nearDeathUsed = false;
     // Jump powerup state
     this.jumpReady = false;
-    this.jumpActive = false; // true during the one step where collision is ignored
+    this.jumpActive = false;
 
     // Stage sparks — track which have fired
     this.sparks = { glitch: false, trail: false, foodTwitch: false, tilt: false, pause: false };
+
+    // Apply DEV stage override
+    if (window.DEV && window.DEV.stage > 1) {
+      this.evolution.stage = window.DEV.stage;
+    }
     this.trailSegments = []; // fading trail for stage 2+
     this.gridTilt = 0;       // degrees, stage 4
     this.snakeForcePause = false;
@@ -88,7 +94,7 @@ class GameScene extends Phaser.Scene {
 
   tick() {
     // Stage 5 spark: snake pauses on its own once
-    if (!this.sparks.pause && this.evolution.stage >= 5) {
+    if (!this.sparks.pause && this.evolution.stage >= 5 && this._dev('pause')) {
       this.sparks.pause = true;
       this.snakeForcePause = true;
       this.time.delayedCall(600, () => { this.snakeForcePause = false; });
@@ -111,7 +117,7 @@ class GameScene extends Phaser.Scene {
     if (this.jumpActive) this.jumpActive = false; // jump consumed
 
     // Add trail segment before moving
-    if (this.evolution.stage >= 2) {
+    if (this.evolution.stage >= 2 && this._dev('trail')) {
       this.trailSegments.push({ x: this.snake[0].x, y: this.snake[0].y, alpha: 0.25 });
       if (this.trailSegments.length > 12) this.trailSegments.shift();
     }
@@ -120,7 +126,7 @@ class GameScene extends Phaser.Scene {
     this.playstyle.recordMove(head, this.food);
 
     // Stage 3 spark: food twitches once before being eaten
-    if (!this.sparks.foodTwitch && this.evolution.stage >= 3) {
+    if (!this.sparks.foodTwitch && this.evolution.stage >= 3 && this._dev('foodTwitch')) {
       const dist = Math.abs(head.x - this.food.x) + Math.abs(head.y - this.food.y);
       if (dist <= 2) {
         this.sparks.foodTwitch = true;
@@ -136,7 +142,7 @@ class GameScene extends Phaser.Scene {
       this.scoreText.setText('SCORE: ' + this.score);
 
       // Stage 1 spark: tiny glitch on very first eat
-      if (!this.sparks.glitch && this.score === 1) {
+      if (!this.sparks.glitch && this.score === 1 && this._dev('glitch')) {
         this.sparks.glitch = true;
         this.doGlitch();
       }
@@ -175,7 +181,7 @@ class GameScene extends Phaser.Scene {
 
     // Stage 4 spark: world tilts slightly (canvas rotation)
     const tiltTarget = stage >= 4 && !this.sparks.tilt ? 1.5 : 0;
-    if (stage >= 4 && !this.sparks.tilt) {
+    if (stage >= 4 && !this.sparks.tilt && this._dev('tilt')) {
       this.sparks.tilt = true;
       this.gridTilt = 1.5;
       // Tilt resets after a few seconds — the world corrects itself
@@ -280,7 +286,7 @@ class GameScene extends Phaser.Scene {
     if (stage === 4) this.voice.requestMic();
 
     // Give jump powerup at stage 3
-    if (stage === 3) {
+    if (stage === 3 && this._dev('jump')) {
       this.time.delayedCall(2000, () => {
         this.jumpReady = true;
         this.showFlash('something new awakens...', '#88ff88');
@@ -290,7 +296,7 @@ class GameScene extends Phaser.Scene {
 
   die() {
     // Near-death powerup — 30% chance, only once
-    if (!this.nearDeathUsed && Math.random() < 0.3) {
+    if (!this.nearDeathUsed && Math.random() < 0.3 && this._dev('nearDeath')) {
       this.nearDeathUsed = true;
       this.nearDeathRevival();
       return;
@@ -299,6 +305,10 @@ class GameScene extends Phaser.Scene {
     this.alive = false;
     this.scoreText.setText('GAME OVER — SCORE: ' + this.score + '  [SPACE to restart]');
     this.input.keyboard.once('keydown-SPACE', () => this.scene.restart());
+  }
+
+  _dev(key) {
+    return !window.DEV || window.DEV.milestones[key] !== false;
   }
 
   nearDeathRevival() {
