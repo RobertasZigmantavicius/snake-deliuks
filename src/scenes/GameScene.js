@@ -69,6 +69,13 @@ class GameScene extends Phaser.Scene {
     });
 
     this.evolution.onStageChange = (stage) => this.handleStageChange(stage);
+
+    // Ask for mic at start — pause the game until player responds
+    this.alive = false;
+    this.voice.requestMic(
+      () => { this.alive = true; },  // granted
+      () => { this.alive = true; }   // declined — game starts either way
+    );
   }
 
   update(time, delta) {
@@ -159,8 +166,8 @@ class GameScene extends Phaser.Scene {
     this.bgGraphics.clear();
     const stage = this.evolution.stage;
 
-    // Background
-    this.bgGraphics.fillStyle(0x0d0d0d);
+    // Background — slightly lighter so grid reads well
+    this.bgGraphics.fillStyle(0x1a1a1a);
     this.bgGraphics.fillRect(0, 0, COLS * GRID_SIZE, ROWS * GRID_SIZE);
 
     // Grid — visible in stages 1-3, fades out by stage 4
@@ -283,7 +290,6 @@ class GameScene extends Phaser.Scene {
 
   handleStageChange(stage) {
     console.log('Stage:', stage);
-    if (stage === 4) this.voice.requestMic();
 
     // Give jump powerup at stage 3
     if (stage === 3 && this._dev('jump')) {
